@@ -1,0 +1,18 @@
+#search{
+    width: 540px;
+}
+#logo{
+    font-weight: bold;
+    font-size: 2rem;
+    color: #1f2937;
+    letter-spacing: 0.005em;
+  
+}
+#hero{
+    width: 98%;
+    padding: 3rem 15rem;
+}
+#testimonials{
+    width: 98%;
+    padding: 3rem 3rem;
+}

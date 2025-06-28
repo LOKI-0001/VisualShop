@@ -1,0 +1,457 @@
+import React, { useState } from "react";
+
+function ImageTagger() {
+  const [tags, setTags] = useState([]);
+  const [search, setSearch] = useState("");
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64 = reader.result.split(",")[1];
+
+      try {
+        const response = await fetch("http://localhost:5000/clarifai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            inputs: [
+              {
+                data: {
+                  image: {
+                    base64: base64,
+                  },
+                },
+              },
+            ],
+          }),
+        });
+
+        const data = await response.json();
+
+        // Check for Clarifai errors
+        if (data.status && data.status.code !== 10000) {
+          alert("Clarifai error: " + (data.status.description || "Unknown error"));
+          setTags([]);
+          setSearch("");
+          return;
+        }
+
+        // Extract tags
+        const concepts =
+          data.outputs?.[0]?.data?.concepts?.map((c) => c.name) || [];
+        setTags(concepts);
+        setSearch(concepts.join(", "));
+      } catch (err) {
+        alert("Server error: " + err.message);
+        setTags([]);
+        setSearch("");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // When user edits the search bar, update tags array as well
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearch(value);
+    setTags(
+      value
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0)
+    );
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <input type="file" accept="image/*" onChange={handleFileChange} />
+      <input
+        type="text"
+        value={search}
+        placeholder="Tags will appear here"
+        onChange={handleSearchChange}
+        className="border rounded px-2 py-1 w-80"
+      />
+    </div>
+  );
+}
+
+export default ImageTagger;
+
+
+
+curl -X POST "https://api.clarifai.com/v2/models/general-image-detection/versions/1580bb1932594c93b7e2e04456af7c6f/outputs" \
+  -H "Authorization: Key f44e5755b4324b2bb835fbb91ec9e388" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_app_id": {
+      "user_id": "x0bunsxraiic",
+      "app_id": "nothing"
+    },
+    "inputs": [
+      {
+        "data": {
+          "image": {
+            "url": "https://samples.clarifai.com/metro-north.jpg"
+          }
+        }
+      }
+    ]
+  }'
+
+
+  // Extract detection
+
+  import React, { useRef, useState } from "react";
+
+function ImageTagger() {
+  const [tags, setTags] = useState([]);
+  const [search, setSearch] = useState("");
+  const [imageProcessed, setImageProcessed] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [showLens, setShowLens] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = async (e) => {
+    setImageProcessed(false);
+    const file = e.target.files[0];
+    if (!file) return;
+    setImagePreview(URL.createObjectURL(file));
+    setShowLens(true);
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64 = reader.result.split(",")[1];
+
+      try {
+        const response = await fetch("http://localhost:5000/clarifai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            inputs: [
+              {
+                data: {
+                  image: {
+                    base64: base64,
+                  },
+                },
+              },
+            ],
+          }),
+        });
+
+        const data = await response.json();
+        // Extract unique object names from detection model
+        const regions = data.outputs?.[0]?.data?.regions || [];
+        const detectedNames = [
+          ...new Set(
+            regions.flatMap(region =>
+              (region.data?.concepts || []).map(concept => concept.name)
+            )
+          ),
+        ];
+
+        setTags(detectedNames);
+        setSearch(detectedNames.join(", "));
+        setImageProcessed(true);
+      } catch (err) {
+        alert("Server error: " + err.message);
+        setTags([]);
+        setSearch("");
+        setImageProcessed(true);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearch(value);
+    setTags(
+      value
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0)
+    );
+  };
+
+  const handleCameraClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleCloseLens = () => {
+    setShowLens(false);
+    setImagePreview(null);
+    setTags([]);
+    setSearch("");
+    setImageProcessed(false);
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-4 w-full">
+      <div className="relative w-96">
+        <input
+          type="text"
+          value={search}
+          placeholder="Search or upload an image"
+          onChange={handleSearchChange}
+          className="border rounded-full px-4 py-2 w-full pr-12 shadow"
+        />
+        <button
+          type="button"
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white rounded-full hover:bg-gray-100"
+          onClick={handleCameraClick}
+          tabIndex={-1}
+        >
+          {/* Camera SVG icon */}
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M21.02 5H19V2.98c0-.54-.44-.98-.98-.98h-.03c-.55 0-.99.44-.99.98V5h-2.01c-.54 0-.98.44-.99.98v.03c0 .55.44.99.99.99H17v2.01c0 .54.44.99.99.98h.03c.54 0 .98-.44.98-.98V7h2.02c.54 0 .98-.44.98-.98v-.04c0-.54-.44-.98-.98-.98zM16 9.01V8h-1.01c-.53 0-1.03-.21-1.41-.58-.37-.38-.58-.88-.58-1.44 0-.36.1-.69.27-.98H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-8.28c-.3.17-.64.28-1.02.28-1.09-.01-1.98-.9-1.98-1.99zM15.96 19H6c-.41 0-.65-.47-.4-.8l1.98-2.63c.21-.28.62-.26.82.02L10 18l2.61-3.48c.2-.26.59-.27.79-.01l2.95 3.68c.26.33.03.81-.39.81z"/></svg>
+        </button>
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          style={{ display: "none" }}
+          onChange={handleFileChange}
+        />
+      </div>
+
+      {/* Google Lens-like container */}
+      {showLens && (
+        <div className="mt-4 w-96 bg-white rounded-xl shadow-lg p-4 relative">
+          <button
+            className="absolute top-2 right-2 text-gray-400 hover:text-gray-700"
+            onClick={handleCloseLens}
+            aria-label="Close"
+          >
+            &#10005;
+          </button>
+          {imagePreview && (
+            <img
+              src={imagePreview}
+              alt="Preview"
+              className="mb-2 max-h-64 rounded shadow w-16 object-contain"
+            />
+          )}
+          {/* <input
+            type="text"
+            value={search}
+            placeholder="Tags will appear here"
+            onChange={handleSearchChange}
+            className="border rounded px-2 py-1 w-full mb-2"
+          /> */}
+          {imageProcessed && tags.length === 0 && (
+            <div className="text-red-500">No tags detected for this image.</div>
+          )}
+          {/* {tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )} */}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default ImageTagger;
+
+// home page first
+import React, { useRef, useState } from "react";
+
+const categories = [
+  { name: "clothes", color: "#d6c7ff" },
+  { name: "electronics", color: "#c7e0ff" },
+  { name: "groceries", color: "#ffe7c7" },
+  { name: "fashion", color: "#c7ffd6" },
+];
+
+export default function HomePage() {
+  const [search, setSearch] = useState("");
+  const [tags, setTags] = useState([]);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageProcessed, setImageProcessed] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const fileInputRef = useRef(null);
+
+  // Simulate Amazon results (replace with real API call)
+  const [amazonResults, setAmazonResults] = useState(null);
+
+  // Handle image upload and tag extraction
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setImagePreview(URL.createObjectURL(file));
+    setShowResults(false);
+
+    // Simulate Vision AI tag extraction (replace with real API call)
+    setTimeout(() => {
+      const detectedTags = ["bag", "leather", "fashion", "accessory", "shopping"];
+      setTags(detectedTags);
+      setSearch(detectedTags.join(", "));
+      setImageProcessed(true);
+    }, 800);
+  };
+
+  // Handle text input
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setTags(
+      e.target.value
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0)
+    );
+  };
+
+  // Handle search button (simulate SerpAPI)
+  const handleSearch = () => {
+    setShowResults(true);
+    // Simulate Amazon results (replace with real SerpAPI call)
+    setAmazonResults([
+      { title: "Amazon Result 1", price: "$19.99" },
+      { title: "Amazon Result 2", price: "$29.99" },
+      { title: "Amazon Result 3", price: "$39.99" },
+    ]);
+  };
+
+  // Handle category tile click
+  const handleCategoryClick = (category) => {
+    setSearch(category);
+    setTags([category]);
+    setShowResults(true);
+    setAmazonResults([
+      { title: `Best of ${category}`, price: "$49.99" },
+      { title: `Top ${category} pick`, price: "$59.99" },
+    ]);
+  };
+
+  // Handle back to home
+  const handleBack = () => {
+    setShowResults(false);
+    setAmazonResults(null);
+    setImageProcessed(false);
+    setImagePreview(null);
+    setSearch("");
+    setTags([]);
+  };
+
+  return (
+    <div className="flex flex-col items-center w-full min-h-screen bg-white">
+      {/* Top Bar */}
+      <div className="flex justify-between items-center w-full px-8 py-4 border-b">
+        <div className="text-2xl font-bold">VisualShop</div>
+        <div className="flex gap-2 items-center">
+          <button
+            className="p-2 border rounded-full bg-gray-100"
+            onClick={() => fileInputRef.current.click()}
+            title="Upload image"
+          >
+            <svg width="24" height="24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10" /></svg>
+          </button>
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            style={{ display: "none" }}
+            onChange={handleFileChange}
+          />
+          <input
+            type="text"
+            value={search}
+            onChange={handleSearchChange}
+            placeholder="Enter text or upload image"
+            className="border rounded px-4 py-2 w-80"
+          />
+          <button
+            className="px-4 py-2 bg-blue-600 text-white rounded"
+            onClick={handleSearch}
+          >
+            Search
+          </button>
+          <div className="ml-4 px-4 py-2 bg-blue-200 rounded-full text-sm font-semibold cursor-pointer">
+            user profile
+          </div>
+        </div>
+      </div>
+
+      {/* Smooth transition: show either results or homepage content */}
+      <div
+        className={`transition-all duration-500 w-full flex flex-col items-center ${
+          showResults ? "opacity-100" : "opacity-100"
+        }`}
+      >
+        {!showResults ? (
+          <>
+            {/* Tag suggestion */}
+            <div className="mt-6 text-gray-600 italic text-center">
+              upload images for best results without typing... <br />
+              <b>SNAP IT, SHOP IT</b>
+            </div>
+
+            {/* Image preview */}
+            {imagePreview && (
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="mt-4 max-h-40 rounded shadow"
+              />
+            )}
+
+            {/* Category Tiles */}
+            <div className="flex gap-8 mt-8">
+              {categories.map((cat) => (
+                <button
+                  key={cat.name}
+                  className="w-32 h-32 rounded-2xl shadow-lg text-lg font-semibold"
+                  style={{ background: cat.color }}
+                  onClick={() => handleCategoryClick(cat.name)}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div className="mt-12 w-full text-center py-8 text-2xl font-handwriting border-t">
+              FOOTER
+            </div>
+          </>
+        ) : (
+          <div className="w-full flex flex-col items-center mt-12">
+            <div className="text-xl mb-4">
+              search result for <b>{search}</b>
+            </div>
+            <div className="w-[700px] min-h-[300px] bg-yellow-100 rounded-2xl flex flex-col items-center justify-center text-5xl font-handwriting shadow-lg">
+              AMAZON
+              <div className="text-base font-normal mt-8">
+                {/* Simulated Amazon results */}
+                {amazonResults &&
+                  amazonResults.map((item, idx) => (
+                    <div key={idx} className="my-2 text-black text-lg">
+                      {item.title} - <span className="font-bold">{item.price}</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+            <button
+              className="mt-8 px-6 py-2 bg-gray-200 rounded-full"
+              onClick={handleBack}
+            >
+              ← Back to Home
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

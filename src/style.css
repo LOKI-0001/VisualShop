@@ -1,0 +1,15 @@
+.card{
+    border: solid 2px black;
+   background-color: whitesmoke;
+   color: black;
+   text-align: center;
+}
+.container{
+   
+    display: flex;
+    justify-content: space-around;
+    animation: infinite;
+}
+body{
+    display: contents;
+}
