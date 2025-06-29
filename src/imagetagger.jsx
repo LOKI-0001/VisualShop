@@ -83,7 +83,7 @@ function ImageTagger({ onSearch }) {
 
   return (
     <div className="flex flex-col items-center gap-4 w-full">
-      <div className="relative w-96" id="search">
+      <div className="relative w-full max-w-md" id="search">
         <input
           type="text"
           value={search}
