@@ -19,7 +19,7 @@ const Navbar = () => {
                     <span className="drop-shadow">VisualShop</span>
                 </a>
                 {/* Navigation Links */}
-                <div className="hidden md:flex gap-8 text-gray-700 font-medium text-base ml-10">
+                <div className="hidden md:flex gap-8 text-gray-700 font-medium text-xl ml-10">
                     <a href="#features" className="hover:text-[#ff6363] transition">Features</a>
                     <a href="#trending" className="hover:text-[#ff6363] transition">Trending</a>
                     <a href="#testimonials" className="hover:text-[#ff6363] transition">Testimonials</a>
