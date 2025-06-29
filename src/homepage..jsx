@@ -247,7 +247,7 @@ export default function HomePage() {
           <div id="tagline" className="font-extrabold text-8xl md:text-4xl pb-10 bg-gradient-to-r from-yellow-400 via-pink-400 to-fuchsia-500 bg-clip-text text-transparent tracking-widest drop-shadow">
             SNAP IT, SHOP IT.
           </div>
-          <section id="hero" className="w-98% flex flex-col md:flex-row items-center rounded-xl justify-between py-16 bg-[#ffa8a8eb] shadow mb-8">
+          <section id="hero" className="w-90% mx-auto px-8  bg-[#ffa8a8] flex flex-col md:flex-row items-center rounded-xl justify-between py-16 bg-[#ffa8a8eb] shadow mb-8">
             <div className="flex-1 text-center md:text-left mb-10 md:mb-0">
               <h1 className="text-5xl font-extrabold mb-4 text-gray-800 tracking-tight">
                 Shop Smarter with AI
