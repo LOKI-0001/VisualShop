@@ -63,8 +63,8 @@ const SERPAPI_KEY = "6b8e209f73d6b4a5d8b276121e8c10ad4dec40b9d4bd10ab533b9950de3
 app.post("/search", async (req, res) => {
   const { query } = req.body;
   try {
-   const url = `https://serpapi.com/search.json?engine=amazon&k=${encodeURIComponent(query)}&api_key=${SERPAPI_KEY}`;
-     const response = await fetch(url, {
+const url = `https://serpapi.com/search.json?engine=amazon&amazon_domain=amazon.in&gl=in&hl=en&currency=INR&k=${encodeURIComponent(query)}&api_key=${SERPAPI_KEY}`;
+    const response = await fetch(url, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
       }
