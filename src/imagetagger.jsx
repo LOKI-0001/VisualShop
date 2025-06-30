@@ -21,7 +21,7 @@ function ImageTagger({ onSearch }) {
       const base64 = reader.result.split(",")[1];
 
       try {
-        const response = await fetch("http://localhost:5000/clarifai", {
+        const response = await fetch("https://visualshop-1.onrender.com/clarifai", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
